@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Checkout</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://js.stripe.com/v3/"></script>
 </head>
+
 <body>
     <div class="container mt-4">
         <h1>Checkout</h1>
@@ -26,11 +28,11 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            var stripe = Stripe('{{ env('STRIPE_KEY') }}');
+            var stripe = Stripe("{{ env('STRIPE_KEY') }}");
             var elements = stripe.elements();
             var cardElement = elements.create('card');
             cardElement.mount('#cardElement');
-    
+
             var form = document.getElementById('paymentForm');
             var errorElement = document.getElementById('cardErrors');
             form.addEventListener('submit', function(event) {
@@ -61,6 +63,7 @@
             });
         });
     </script>
-    
+
 </body>
+
 </html>
