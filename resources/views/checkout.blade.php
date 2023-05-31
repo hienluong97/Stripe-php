@@ -1,4 +1,4 @@
-<html>
+
 
 <head>
     <title>Checkout</title>
@@ -6,7 +6,7 @@
     <script src="https://js.stripe.com/v3/"></script>
 </head>
 
-<body>
+
     <div class="container mt-4">
         <h1>Checkout</h1>
         <form id="paymentForm">
@@ -81,6 +81,5 @@
         });
     </script>
 
-</body>
 
-</html>
+

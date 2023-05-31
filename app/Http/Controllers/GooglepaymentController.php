@@ -13,6 +13,7 @@ class GooglepaymentController extends Controller
         return view('googlepay');
     }
 
+
     public function createPaymentIntent(Request $request)
     {
         Stripe::setApiKey(env('STRIPE_SECRET'));
@@ -22,8 +23,6 @@ class GooglepaymentController extends Controller
             'currency' => 'jpy',
         ]);
 
-        return response()->json([
-            'clientSecret' => $paymentIntent->client_secret,
-        ]);
+        return response()->json(['clientSecret' => $paymentIntent->client_secret]);
     }
 }
