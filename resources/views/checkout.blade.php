@@ -9,7 +9,7 @@
 <body>
     <div class="container mt-4">
         <h1>Checkout</h1>
-        <form id="paymentForm" action="{{ route('payment') }}" method="post">
+        <form id="paymentForm">
             @csrf
             <div class="form-group">
                 <label for="amount">Amount:</label>
