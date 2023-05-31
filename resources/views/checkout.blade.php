@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html>
 
 <head>
@@ -21,7 +20,7 @@
                 <input type="text" id="cardholderName" name="cardholderName" class="form-control" required>
             </div>
             <div id="cardElement" class="form-control"></div>
-            <div id="cardErrors" role="alert"></div>
+            <div id="cardErrors" role="alert" class="text-danger"></div>
             <button id="checkoutButton" type="submit" class="btn btn-primary mt-3">Checkout</button>
         </form>
     </div>
@@ -35,32 +34,50 @@
 
             var form = document.getElementById('paymentForm');
             var errorElement = document.getElementById('cardErrors');
-            form.addEventListener('submit', function(event) {
+
+
+            form.addEventListener('submit', async (event) => {
                 event.preventDefault();
-                stripe.createPaymentMethod({
-                    type: 'card',
-                    card: cardElement,
-                    billing_details: {
-                        name: document.getElementById('cardholderName').value
-                    }
-                }).then(function(result) {
-                    if (result.error) {
-                        errorElement.textContent = result.error.message;
-                    } else {
-                        stripe.confirmCardPayment("{{ $clientSecret }}", {
-                            payment_method: result.paymentMethod.id
-                        }).then(function(result) {
-                            if (result.error) {
-                                errorElement.textContent = result.error.message;
-                            } else {
-                                console.log(result.paymentIntent);
-                                // Handle successful payment
-                                form.submit();
-                            }
-                        });
+
+                // Create Payment Intent
+                const response = await fetch("{{ route('payment') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    },
+                    body: JSON.stringify({
+                        amount: document.getElementById('amount').value,
+                    }),
+                });
+
+                const data = await response.json();
+                const {
+                    clientSecret
+                } = data;
+
+                // Confirm Card Payment
+                const {
+                    paymentIntent,
+                    error
+                } = await stripe.confirmCardPayment(clientSecret, {
+                    payment_method: {
+                        card: cardElement,
                     }
                 });
+
+                if (error) {
+                    // Handle payment error
+                    console.error(error.message);
+                    errorElement.textContent = error.message;
+                } else {
+                    // Payment success
+                    console.log(paymentIntent);
+                    // Redirect or show success message
+                }
             });
+
+
         });
     </script>
 
