@@ -24,15 +24,6 @@ ngrok http 8000
 
 ```
 
-### library
-
-stripe-php
-
-```
-composer require stripe/stripe-php
-
-```
-
 ## Install and configure the stripe-php library:
 
 ```
