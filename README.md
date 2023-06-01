@@ -11,13 +11,6 @@ composer require stripe/stripe-php
 
 ```
 
-インストール コマンド
-
-```
-flutter pub get
-
-```
-
 ## Create Stripe test account.
 
 1. Register here https://dashboard.stripe.com/register.
