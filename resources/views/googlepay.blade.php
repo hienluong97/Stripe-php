@@ -37,6 +37,7 @@
 <script src="https://js.stripe.com/v3/"></script>
 
 <script>
+    var paymentAmount = 50;
     // 1. Initialize Stripe
     const stripe = Stripe("{{ env('STRIPE_KEY') }}");
 
@@ -46,7 +47,7 @@
         currency: 'jpy',
         total: {
             label: 'Demo total',
-            amount: 50,
+            amount: paymentAmount,
         },
         requestPayerName: true,
         requestPayerEmail: true,
@@ -85,6 +86,7 @@
                 body: JSON.stringify({
                     currency: 'jpy',
                     paymentMethodType: 'card',
+                    amount: paymentAmount
                 }),
             }
         ).then((r) => r.json());
