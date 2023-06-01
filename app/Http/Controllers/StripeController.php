@@ -17,17 +17,13 @@ class StripeController extends Controller
     {
         return view('googlepay');
     }
-
-
     public function createPaymentIntent(Request $request)
     {
         Stripe::setApiKey(env('STRIPE_SECRET'));
-
         $paymentIntent = PaymentIntent::create([
             'amount' => $request->amount,
             'currency' => 'jpy',
         ]);
-
         return response()->json(['clientSecret' => $paymentIntent->client_secret]);
     }
 }
