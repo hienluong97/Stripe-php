@@ -64,16 +64,6 @@
     paymentRequest.canMakePayment().then(function(result) {
         if (result) {
             prButton.mount('#payment-request-button');
-
-
-
-
-
-
-
-
-
-
         } else {
             document.getElementById('payment-request-button').style.display = 'none';
             // addMessage('Google Pay support not found. Check the pre-requisites above and ensure you are testing in a supported browser.');

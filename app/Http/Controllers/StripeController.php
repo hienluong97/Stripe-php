@@ -18,17 +18,6 @@ class StripeController extends Controller
         return view('googlepay');
     }
 
-
-    public function createSetupIntent(Request $request)
-    {
-        Stripe::setApiKey(env('STRIPE_SECRET'));
-        $setupIntents = SetupIntents::create([
-            'payment_method_types' => ['card'],
-        ]);
-        // return response()->json(['clientSecret' => $setupIntents->client_secret]);
-    }
-
-
     public function createPaymentIntent(Request $request)
     {
         Stripe::setApiKey(env('STRIPE_SECRET'));
