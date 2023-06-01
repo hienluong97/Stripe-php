@@ -8,12 +8,18 @@ use Stripe\PaymentIntent;
 
 class StripeController extends Controller
 {
-    public function checkout()
+    public function creditpay()
     {
-        return view('checkout');
+        return view('credit-pay');
     }
 
-    public function payment(Request $request)
+    public function googlepay()
+    {
+        return view('googlepay');
+    }
+
+
+    public function createPaymentIntent(Request $request)
     {
         Stripe::setApiKey(env('STRIPE_SECRET'));
 
