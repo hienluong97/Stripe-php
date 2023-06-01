@@ -19,7 +19,7 @@ class GooglepaymentController extends Controller
         Stripe::setApiKey(env('STRIPE_SECRET'));
 
         $paymentIntent = PaymentIntent::create([
-            'amount' => 10,
+            'amount' => 50,
             'currency' => 'jpy',
         ]);
 
