@@ -1,8 +1,37 @@
-# flutter_local_notifications
+# GOOGLE PAY
 
-### 利用パッケージ
+## Serve your application over HTTPS
+
+You can Use ngrok
+
+download
+
+https://ngrok.com/
+
+1. Unzip to install
+
+2. Connect your account
+
+```
+ngrok config add-authtoken <Your-Authtoken?
+
+```
+
+3. Fire it up
+
+```
+ngrok http 8000
+
+```
+
+### library
 
 stripe-php
+
+```
+composer require stripe/stripe-php
+
+```
 
 ## Install and configure the stripe-php library:
 
