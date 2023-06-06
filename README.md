@@ -13,7 +13,7 @@ https://ngrok.com/
 2. Connect your account
 
 ```
-ngrok config add-authtoken <Your-Authtoken?
+ngrok config add-authtoken <Your-Authtoken>
 
 ```
 
@@ -24,7 +24,7 @@ ngrok http 8000
 
 ```
 
-## Install and configure the stripe-php library:
+## Install the stripe-php library:
 
 ```
 composer require stripe/stripe-php
@@ -34,7 +34,7 @@ composer require stripe/stripe-php
 ## Create Stripe test account.
 
 1. Register here https://dashboard.stripe.com/register.
-1. Get Secret Key and(Publishable Key.
+1. Get Secret Key and Publishable Key.
 
 ## Provide your Stripe API keys in the .env file of your Laravel project.
 
@@ -50,6 +50,9 @@ STRIPE_SECRET=your_stripe_secret_key
 #### routes/web.php
 
 ```
+<?php
+use App\Http\Controllers\StripeController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/googlepay', [StripeController::class, 'googlepay'])->name('googlepay');
 Route::post('/payment/intent', [StripeController::class, 'createPaymentIntent'])->name('payment.intent');
@@ -66,13 +69,15 @@ php artisan make:controller StripeController
 #### app/Http/Controllers/StripeController.php
 
 ```
+<?php
+namespace App\Http\Controllers;
+use Illuminate\Http\Request;
+use Stripe\Stripe;
+use Stripe\Customer;
+use Stripe\PaymentIntent;
+
 class StripeController extends Controller
 {
-    public function creditpay()
-    {
-        return view('credit-pay');
-    }
-
     public function googlepay()
     {
         return view('googlepay');
@@ -91,12 +96,12 @@ class StripeController extends Controller
 
 #### Create the view:
 
-Use Payment Request Button
+##### Use Payment Request Button
 
 About Prerequisites : read hear
 https://stripe.com/docs/stripe-js/elements/payment-request-button?client=html#html-js-prerequisites
 
-#### set up Stripe Element:
+#### Set up Stripe Element:
 
 ##### resources/views/googlepay.blade.php:
 
@@ -108,7 +113,7 @@ https://stripe.com/docs/stripe-js/elements/payment-request-button?client=html#ht
     <div id="messages" role="alert"></div>
 ```
 
-#### add support function:
+#### Add support function:
 
 ```
 <script>
@@ -136,7 +141,7 @@ https://stripe.com/docs/stripe-js/elements/payment-request-button?client=html#ht
 
 ### Use JavaScript to handle the form submission and Google Pay integration.
 
-#### resources/views/googlepay.blade.php
+#### Resources/views/googlepay.blade.php
 
 1. Initialize Stripe
 
@@ -254,4 +259,177 @@ https://stripe.com/docs/stripe-js/elements/payment-request-button?client=html#ht
 
         addMessage(`Payment ${paymentIntent.status}: ${paymentIntent.id}`);
     });
+```
+
+### Test payment
+
+```
+https://<Ngork_url>/goolepay
+
+```
+
+# Bank Transfer
+
+### In your routes/web.php file to handle the payment process.
+
+#### routes/web.php
+
+```
+Route::get('/bankpay', [StripeController::class, 'bankpay'])->name('bankpay');
+Route::post('/payment/bank-transfer', [StripeController::class, 'createBankPaymentIntent'])->name('payment.bank-transfer');
+Route::post('/payment/bank-transfer-complete', [StripeController::class, 'completeBankPayment'])->name('payment.bank-transfer.complete');
+
+```
+
+### Set up the necessary routes and controllers:
+
+#### app/Http/Controllers/StripeController.php
+
+```
+
+use Stripe\Stripe;
+use Stripe\Customer;
+use Stripe\PaymentIntent;
+
+
+class StripeController extends Controller
+{
+    public function bankpay()
+    {
+        return view('bankpay');
+    }
+
+    public function createBankPaymentIntent(Request $request)
+    {
+        $email = $request->input('email');
+        $name = $request->input('name');
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+
+        $customer = Customer::create([
+            'email' => $email,
+            'name' => $name
+        ]);
+
+        // Create a payment intent
+        $intent = PaymentIntent::create([
+            'amount' => $request->input('amount'),
+            'currency' => 'jpy',
+            'customer' => $customer->id,
+            'payment_method_types' => ['customer_balance'],
+            'payment_method_data' => [
+                'type' => 'customer_balance',
+            ],
+            'payment_method_options' => [
+                'customer_balance' => [
+                    'funding_type' => 'bank_transfer',
+                    'bank_transfer' => [
+                        'type' => 'jp_bank_transfer',
+                    ],
+                ],
+            ],
+        ]);
+
+        // Return the payment intent information to display to the user
+        return response()->json([
+            'client_secret' => $intent->client_secret,
+        ]);
+    }
+}
+```
+
+### Create the view:
+
+#### Create form:
+
+##### resources/views/bankpay.blade.php:
+
+```
+<h1>Stripe Bank Transfer Payment</h1>
+<form id="payment-form">
+    <input type="text" id="cardholderName" name="cardholderName" placeholder="cardholderName" required><br>
+    <input type="email" name="email" placeholder="Email" required><br>
+    <input type="number" name="amount" placeholder="Amount" required><br>
+    <button type="submit">Pay by bank transfer</button>
+</form>
+```
+
+#### Add support function:
+
+```
+<script src="https://js.stripe.com/v3/"></script>
+
+```
+
+### Use JavaScript to handle the form submission.
+
+#### resources/views/bankpay.blade.php
+
+1. Initialize Stripe
+
+```
+ const stripe = Stripe("{{ env('STRIPE_KEY') }}");
+```
+
+2. Handle form submit
+
+```
+   var form = document.getElementById('payment-form');
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        fetch("{{ route('payment.bank-transfer') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                name: form.cardholderName.value,
+                email: form.email.value,
+                amount: form.amount.value
+            })
+        }).then(function(response) {
+            return response.json();
+        }).then(function(data) {
+            stripe.confirmPaymentIntent(data.client_secret).then(function(result) {
+                if (result.error) {
+                    console.log(result.error.message);
+                } else {
+                    const paymentIntent = result.paymentIntent;
+                    if (paymentIntent.status === 'requires_action') {
+                        const nextAction = paymentIntent.next_action;
+
+                        if (nextAction.type === 'display_bank_transfer_instructions') {
+                            // Redirect to hosted instructions URL for bank transfer
+                            const hostedInstructionsUrl = nextAction.display_bank_transfer_instructions.hosted_instructions_url;
+                            window.location.href = hostedInstructionsUrl;
+                        } else if (nextAction.type === 'use_stripe_sdk') {
+                            // Handle card action using Stripe.js
+                            stripe.handleCardAction(paymentIntent.client_secret)
+                                .then(function(result) {
+                                    if (result.error) {
+                                        console.log(result.error.message);
+                                    } else {
+                                        console.log(paymentIntent.id);
+                                    }
+                                });
+                        } else {
+                            console.log('Unsupported action type:', nextAction.type);
+                        }
+                    } else if (paymentIntent.status === 'succeeded') {
+                        console.log('Payment has been successfully completed');
+                    }
+                }
+            });
+        });
+    });
+```
+
+### Test payment
+
+Note: Make sure to check if your bank account has sufficient funds for payment.
+
+```
+https://<Ngork_url>/bankpay
+
 ```
