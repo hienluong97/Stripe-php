@@ -36,15 +36,16 @@ class StripeController extends Controller
 
     public function createBankPaymentIntent(Request $request)
     {
-        // Thiết lập khóa Stripe
+        $email = $request->input('email');
+        $name = $request->input('name');
         Stripe::setApiKey(env('STRIPE_SECRET'));
 
-        // Tạo customer mới
         $customer = Customer::create([
-            'email' => $request->input('email'),
+            'email' => $email,
+            'name' => $name
         ]);
 
-        // Tạo payment intent
+        // Create a payment intent
         $intent = PaymentIntent::create([
             'amount' => $request->input('amount'),
             'currency' => 'jpy',
@@ -63,36 +64,9 @@ class StripeController extends Controller
             ],
         ]);
 
-        // Trả về thông tin payment intent để hiển thị cho người dùng
+        // Return the payment intent information to display to the user
         return response()->json([
             'client_secret' => $intent->client_secret,
         ]);
-    }
-
-    public function completeBankPayment(Request $request)
-    {
-        // Khởi tạo Stripe với khóa bí mật của bạn
-        Stripe::setApiKey(env('STRIPE_SECRET'));
-
-        // Lấy PaymentIntent ID từ yêu cầu
-        $paymentIntentId = $request->input('paymentIntentId');
-
-        try {
-            // Hoàn thành thanh toán bằng cách xác nhận PaymentIntent
-            $paymentIntent = PaymentIntent::retrieve($paymentIntentId);
-            $paymentIntent->confirm();
-
-            // Kiểm tra trạng thái của PaymentIntent
-            if ($paymentIntent->status === 'succeeded') {
-                // Thanh toán đã hoàn thành
-                return response()->json(['status' => 'success']);
-            } else {
-                // Thanh toán chưa hoàn thành
-                return response()->json(['status' => 'incomplete']);
-            }
-        } catch (\Exception $e) {
-            // Xử lý lỗi nếu có
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
     }
 }

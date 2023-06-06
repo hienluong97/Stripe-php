@@ -7,19 +7,21 @@
 </head>
 
 <script src="https://js.stripe.com/v3/"></script>
-
 <h1>Stripe Bank Transfer Payment</h1>
 
 <form id="payment-form">
+    <input type="text" id="cardholderName" name="cardholderName" placeholder="cardholderName" required><br>
     <input type="email" name="email" placeholder="Email" required><br>
     <input type="number" name="amount" placeholder="Amount" required><br>
-    <button type="submit">Pay by bank</button>
+    <button type="submit">Pay by bank transfer</button>
 </form>
 
 <script>
+    // Initialize Stripe
     var stripe = Stripe("{{ env('STRIPE_KEY') }}");
-    var form = document.getElementById('payment-form');
 
+    // Handle form submission
+    var form = document.getElementById('payment-form');
     form.addEventListener('submit', function(event) {
         event.preventDefault();
 
@@ -30,6 +32,7 @@
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
             body: JSON.stringify({
+                name: form.cardholderName.value,
                 email: form.email.value,
                 amount: form.amount.value
             })
@@ -41,14 +44,15 @@
                     console.log(result.error.message);
                 } else {
                     const paymentIntent = result.paymentIntent;
-
                     if (paymentIntent.status === 'requires_action') {
                         const nextAction = paymentIntent.next_action;
 
                         if (nextAction.type === 'display_bank_transfer_instructions') {
+                            // Redirect to hosted instructions URL for bank transfer
                             const hostedInstructionsUrl = nextAction.display_bank_transfer_instructions.hosted_instructions_url;
                             window.location.href = hostedInstructionsUrl;
                         } else if (nextAction.type === 'use_stripe_sdk') {
+                            // Handle card action using Stripe.js
                             stripe.handleCardAction(paymentIntent.client_secret)
                                 .then(function(result) {
                                     if (result.error) {
@@ -58,10 +62,10 @@
                                     }
                                 });
                         } else {
-                            console.log('Loại hành động không được hỗ trợ:', nextAction.type);
+                            console.log('Unsupported action type:', nextAction.type);
                         }
                     } else if (paymentIntent.status === 'succeeded') {
-                        console.log('Thanh toán đã hoàn thành');
+                        console.log('Payment has been successfully completed');
                         completePayment(paymentIntent.id);
                     }
                 }
@@ -69,33 +73,33 @@
         });
     });
 
-    function completePayment(paymentIntentId) {
-        fetch("{{ route('payment.bank-transfer.complete') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    paymentIntentId: paymentIntentId
-                })
-            })
-            .then(function(response) {
-                return response.json();
-            })
-            .then(function(data) {
-                if (data.status === 'success') {
-                    console.log('Payment completed successfully');
-                    // TODO: Xử lý khi thanh toán hoàn thành thành công
-                } else {
-                    console.log('Payment completion failed');
-                    // TODO: Xử lý khi thanh toán không thành công
-                }
-            })
-            .catch(function(error) {
-                console.log('An error occurred during payment completion');
-                console.log(error);
-                // TODO: Xử lý lỗi nếu có
-            });
-    }
+    // function completePayment(paymentIntentId) {
+    //     fetch("{{ route('payment.bank-transfer.complete') }}", {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
+    //             },
+    //             body: JSON.stringify({
+    //                 paymentIntentId: paymentIntentId
+    //             })
+    //         })
+    //         .then(function(response) {
+    //             return response.json();
+    //         })
+    //         .then(function(data) {
+    //             if (data.status === 'success') {
+    //                 console.log('Payment completed successfully');
+    //                 // TODO: Handle successful payment completion
+    //             } else {
+    //                 console.log('Payment completion failed');
+    //                 // TODO: Handle failed payment completion
+    //             }
+    //         })
+    //         .catch(function(error) {
+    //             console.log('An error occurred during payment completion');
+    //             console.log(error);
+    //             // TODO: Handle error if any
+    //         });
+    // }
 </script>
