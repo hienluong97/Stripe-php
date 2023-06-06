@@ -425,7 +425,7 @@ class StripeController extends Controller
 
 ```
 
-### Use JavaScript to handle the form submission and Google Pay integration.
+### Use JavaScript to handle the form submission.
 
 #### resources/views/bankpay.blade.php
 
