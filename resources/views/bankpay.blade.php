@@ -58,7 +58,7 @@
                                     if (result.error) {
                                         console.log(result.error.message);
                                     } else {
-                                        completePayment(paymentIntent.id);
+                                        console.log(paymentIntent.id);
                                     }
                                 });
                         } else {
@@ -66,40 +66,9 @@
                         }
                     } else if (paymentIntent.status === 'succeeded') {
                         console.log('Payment has been successfully completed');
-                        completePayment(paymentIntent.id);
                     }
                 }
             });
         });
     });
-
-    // function completePayment(paymentIntentId) {
-    //     fetch("{{ route('payment.bank-transfer.complete') }}", {
-    //             method: 'POST',
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
-    //             },
-    //             body: JSON.stringify({
-    //                 paymentIntentId: paymentIntentId
-    //             })
-    //         })
-    //         .then(function(response) {
-    //             return response.json();
-    //         })
-    //         .then(function(data) {
-    //             if (data.status === 'success') {
-    //                 console.log('Payment completed successfully');
-    //                 // TODO: Handle successful payment completion
-    //             } else {
-    //                 console.log('Payment completion failed');
-    //                 // TODO: Handle failed payment completion
-    //             }
-    //         })
-    //         .catch(function(error) {
-    //             console.log('An error occurred during payment completion');
-    //             console.log(error);
-    //             // TODO: Handle error if any
-    //         });
-    // }
 </script>
