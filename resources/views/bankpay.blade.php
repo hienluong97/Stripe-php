@@ -17,13 +17,13 @@
 </form>
 
 <script>
-    var stripe = Stripe('{{ env('STRIPE_KEY') }}');
+    var stripe = Stripe("{{ env('STRIPE_KEY') }}");
     var form = document.getElementById('payment-form');
 
     form.addEventListener('submit', function(event) {
         event.preventDefault();
 
-        fetch('{{ route('payment.bank-transfer') }}', {
+        fetch("{{ route('payment.bank-transfer') }}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -70,30 +70,32 @@
     });
 
     function completePayment(paymentIntentId) {
-        fetch('{{ route('payment.bank-transfer.complete') }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({ paymentIntentId: paymentIntentId })
-        })
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(data) {
-            if (data.status === 'success') {
-                console.log('Payment completed successfully');
-                // TODO: Xử lý khi thanh toán hoàn thành thành công
-            } else {
-                console.log('Payment completion failed');
-                // TODO: Xử lý khi thanh toán không thành công
-            }
-        })
-        .catch(function(error) {
-            console.log('An error occurred during payment completion');
-            console.log(error);
-            // TODO: Xử lý lỗi nếu có
-        });
+        fetch("{{ route('payment.bank-transfer.complete') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    paymentIntentId: paymentIntentId
+                })
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.status === 'success') {
+                    console.log('Payment completed successfully');
+                    // TODO: Xử lý khi thanh toán hoàn thành thành công
+                } else {
+                    console.log('Payment completion failed');
+                    // TODO: Xử lý khi thanh toán không thành công
+                }
+            })
+            .catch(function(error) {
+                console.log('An error occurred during payment completion');
+                console.log(error);
+                // TODO: Xử lý lỗi nếu có
+            });
     }
 </script>
