@@ -13,7 +13,7 @@ https://ngrok.com/
 2. Connect your account
 
 ```
-ngrok config add-authtoken <Your-Authtoken?
+ngrok config add-authtoken <Your-Authtoken>
 
 ```
 
@@ -24,7 +24,7 @@ ngrok http 8000
 
 ```
 
-## Install and configure the stripe-php library:
+## Install the stripe-php library:
 
 ```
 composer require stripe/stripe-php
@@ -34,7 +34,7 @@ composer require stripe/stripe-php
 ## Create Stripe test account.
 
 1. Register here https://dashboard.stripe.com/register.
-1. Get Secret Key and(Publishable Key.
+1. Get Secret Key and Publishable Key.
 
 ## Provide your Stripe API keys in the .env file of your Laravel project.
 
@@ -50,6 +50,9 @@ STRIPE_SECRET=your_stripe_secret_key
 #### routes/web.php
 
 ```
+<?php
+use App\Http\Controllers\StripeController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/googlepay', [StripeController::class, 'googlepay'])->name('googlepay');
 Route::post('/payment/intent', [StripeController::class, 'createPaymentIntent'])->name('payment.intent');
@@ -66,13 +69,15 @@ php artisan make:controller StripeController
 #### app/Http/Controllers/StripeController.php
 
 ```
+<?php
+namespace App\Http\Controllers;
+use Illuminate\Http\Request;
+use Stripe\Stripe;
+use Stripe\Customer;
+use Stripe\PaymentIntent;
+
 class StripeController extends Controller
 {
-    public function creditpay()
-    {
-        return view('credit-pay');
-    }
-
     public function googlepay()
     {
         return view('googlepay');
@@ -91,12 +96,12 @@ class StripeController extends Controller
 
 #### Create the view:
 
-Use Payment Request Button
+##### Use Payment Request Button
 
 About Prerequisites : read hear
 https://stripe.com/docs/stripe-js/elements/payment-request-button?client=html#html-js-prerequisites
 
-#### set up Stripe Element:
+#### Set up Stripe Element:
 
 ##### resources/views/googlepay.blade.php:
 
@@ -108,7 +113,7 @@ https://stripe.com/docs/stripe-js/elements/payment-request-button?client=html#ht
     <div id="messages" role="alert"></div>
 ```
 
-#### add support function:
+#### Add support function:
 
 ```
 <script>
@@ -136,7 +141,7 @@ https://stripe.com/docs/stripe-js/elements/payment-request-button?client=html#ht
 
 ### Use JavaScript to handle the form submission and Google Pay integration.
 
-#### resources/views/googlepay.blade.php
+#### Resources/views/googlepay.blade.php
 
 1. Initialize Stripe
 
@@ -256,71 +261,27 @@ https://stripe.com/docs/stripe-js/elements/payment-request-button?client=html#ht
     });
 ```
 
+### Test payment
+
+```
+https://<Ngork_url>/goolepay
+
+```
+
 # Bank Transfer
 
-## Serve your application over HTTPS
-
-You can Use ngrok
-
-download
-
-https://ngrok.com/
-
-1. Unzip to install
-
-2. Connect your account
-
-```
-ngrok config add-authtoken <Your-Authtoken?
-
-```
-
-3. Fire it up
-
-```
-ngrok http 8000
-
-```
-
-## Install and configure the stripe-php library:
-
-```
-composer require stripe/stripe-php
-
-```
-
-## Create Stripe test account.
-
-1. Register here https://dashboard.stripe.com/register.
-1. Get Secret Key and Publishable Key.
-
-## Provide your Stripe API keys in the .env file of your Laravel project.
-
-#### .env
-
-```
-STRIPE_KEY=your_stripe_publishable_key
-STRIPE_SECRET=your_stripe_secret_key
-```
-
-## Create a route in your routes/web.php file to handle the payment process, for
+### In your routes/web.php file to handle the payment process.
 
 #### routes/web.php
 
 ```
-
 Route::get('/bankpay', [StripeController::class, 'bankpay'])->name('bankpay');
 Route::post('/payment/bank-transfer', [StripeController::class, 'createBankPaymentIntent'])->name('payment.bank-transfer');
 Route::post('/payment/bank-transfer-complete', [StripeController::class, 'completeBankPayment'])->name('payment.bank-transfer.complete');
 
 ```
 
-#### Set up the necessary routes and controllers:
-
-```
-php artisan make:controller StripeController
-
-```
+### Set up the necessary routes and controllers:
 
 #### app/Http/Controllers/StripeController.php
 
@@ -333,22 +294,23 @@ use Stripe\PaymentIntent;
 
 class StripeController extends Controller
 {
-     public function bankpay()
+    public function bankpay()
     {
         return view('bankpay');
     }
 
     public function createBankPaymentIntent(Request $request)
     {
-        // Thiết lập khóa Stripe
+        $email = $request->input('email');
+        $name = $request->input('name');
         Stripe::setApiKey(env('STRIPE_SECRET'));
 
-        // Tạo customer mới
         $customer = Customer::create([
-            'email' => $request->input('email'),
+            'email' => $email,
+            'name' => $name
         ]);
 
-        // Tạo payment intent
+        // Create a payment intent
         $intent = PaymentIntent::create([
             'amount' => $request->input('amount'),
             'currency' => 'jpy',
@@ -367,60 +329,33 @@ class StripeController extends Controller
             ],
         ]);
 
-        // Trả về thông tin payment intent để hiển thị cho người dùng
+        // Return the payment intent information to display to the user
         return response()->json([
             'client_secret' => $intent->client_secret,
         ]);
     }
-
-    public function completeBankPayment(Request $request)
-    {
-        // Khởi tạo Stripe với khóa bí mật của bạn
-        Stripe::setApiKey(env('STRIPE_SECRET'));
-
-        // Lấy PaymentIntent ID từ yêu cầu
-        $paymentIntentId = $request->input('paymentIntentId');
-
-        try {
-            // Hoàn thành thanh toán bằng cách xác nhận PaymentIntent
-            $paymentIntent = PaymentIntent::retrieve($paymentIntentId);
-            $paymentIntent->confirm();
-
-            // Kiểm tra trạng thái của PaymentIntent
-            if ($paymentIntent->status === 'succeeded') {
-                // Thanh toán đã hoàn thành
-                return response()->json(['status' => 'success']);
-            } else {
-                // Thanh toán chưa hoàn thành
-                return response()->json(['status' => 'incomplete']);
-            }
-        } catch (\Exception $e) {
-            // Xử lý lỗi nếu có
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
 }
 ```
 
-#### Create the view:
+### Create the view:
 
-#### create form:
+#### Create form:
 
 ##### resources/views/bankpay.blade.php:
 
 ```
 <h1>Stripe Bank Transfer Payment</h1>
 <form id="payment-form">
+    <input type="text" id="cardholderName" name="cardholderName" placeholder="cardholderName" required><br>
     <input type="email" name="email" placeholder="Email" required><br>
     <input type="number" name="amount" placeholder="Amount" required><br>
-    <button type="submit">Pay by bank</button>
+    <button type="submit">Pay by bank transfer</button>
 </form>
 ```
 
-#### add support function:
+#### Add support function:
 
 ```
-
 <script src="https://js.stripe.com/v3/"></script>
 
 ```
@@ -439,7 +374,6 @@ class StripeController extends Controller
 
 ```
    var form = document.getElementById('payment-form');
-
     form.addEventListener('submit', function(event) {
         event.preventDefault();
 
@@ -450,6 +384,7 @@ class StripeController extends Controller
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
             body: JSON.stringify({
+                name: form.cardholderName.value,
                 email: form.email.value,
                 amount: form.amount.value
             })
@@ -461,68 +396,40 @@ class StripeController extends Controller
                     console.log(result.error.message);
                 } else {
                     const paymentIntent = result.paymentIntent;
-
                     if (paymentIntent.status === 'requires_action') {
                         const nextAction = paymentIntent.next_action;
 
                         if (nextAction.type === 'display_bank_transfer_instructions') {
+                            // Redirect to hosted instructions URL for bank transfer
                             const hostedInstructionsUrl = nextAction.display_bank_transfer_instructions.hosted_instructions_url;
                             window.location.href = hostedInstructionsUrl;
                         } else if (nextAction.type === 'use_stripe_sdk') {
+                            // Handle card action using Stripe.js
                             stripe.handleCardAction(paymentIntent.client_secret)
                                 .then(function(result) {
                                     if (result.error) {
                                         console.log(result.error.message);
                                     } else {
-                                        completePayment(paymentIntent.id);
+                                        console.log(paymentIntent.id);
                                     }
                                 });
                         } else {
-                            console.log('Loại hành động không được hỗ trợ:', nextAction.type);
+                            console.log('Unsupported action type:', nextAction.type);
                         }
                     } else if (paymentIntent.status === 'succeeded') {
-                        console.log('Thanh toán đã hoàn thành');
-                        completePayment(paymentIntent.id);
+                        console.log('Payment has been successfully completed');
                     }
                 }
             });
         });
     });
-
-    function completePayment(paymentIntentId) {
-        fetch("{{ route('payment.bank-transfer.complete') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    paymentIntentId: paymentIntentId
-                })
-            })
-            .then(function(response) {
-                return response.json();
-            })
-            .then(function(data) {
-                if (data.status === 'success') {
-                    console.log('Payment completed successfully');
-                    // TODO: Xử lý khi thanh toán hoàn thành thành công
-                } else {
-                    console.log('Payment completion failed');
-                    // TODO: Xử lý khi thanh toán không thành công
-                }
-            })
-            .catch(function(error) {
-                console.log('An error occurred during payment completion');
-                console.log(error);
-                // TODO: Xử lý lỗi nếu có
-            });
-    }
 ```
 
-### Run project
+### Test payment
+
+Note: Make sure to check if your bank account has sufficient funds for payment.
 
 ```
-php artisan serve
+https://<Ngork_url>/bankpay
 
 ```
