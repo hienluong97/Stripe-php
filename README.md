@@ -364,65 +364,83 @@ class StripeController extends Controller
 
 #### resources/views/bankpay.blade.php
 
-1. Initialize Stripe
+1. Initialize Stripe and handle form submit
 
 ```
- const stripe = Stripe("{{ env('STRIPE_KEY') }}");
-```
+ <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Stripe
+        var stripe = Stripe("{{ env('STRIPE_KEY') }}");
+        var form = document.getElementById('payment-form');
+        var errorElement = document.getElementById('cardErrors');
 
-2. Handle form submit
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
 
-```
-   var form = document.getElementById('payment-form');
-    form.addEventListener('submit', function(event) {
-        event.preventDefault();
+            // Create Payment Intent
+            const response = await fetch("{{ route('payment.bank-transfer') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
 
-        fetch("{{ route('payment.bank-transfer') }}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({
-                name: form.cardholderName.value,
-                email: form.email.value,
-                amount: form.amount.value
-            })
-        }).then(function(response) {
-            return response.json();
-        }).then(function(data) {
-            stripe.confirmPaymentIntent(data.client_secret).then(function(result) {
-                if (result.error) {
-                    console.log(result.error.message);
-                } else {
-                    const paymentIntent = result.paymentIntent;
-                    if (paymentIntent.status === 'requires_action') {
-                        const nextAction = paymentIntent.next_action;
+                body: JSON.stringify({
+                    amount: document.getElementById('amount').value,
+                    name: document.getElementById('cardholderName').value,
+                    email: document.getElementById('email').value,
+                })
 
-                        if (nextAction.type === 'display_bank_transfer_instructions') {
-                            // Redirect to hosted instructions URL for bank transfer
-                            const hostedInstructionsUrl = nextAction.display_bank_transfer_instructions.hosted_instructions_url;
-                            window.location.href = hostedInstructionsUrl;
-                        } else if (nextAction.type === 'use_stripe_sdk') {
-                            // Handle card action using Stripe.js
-                            stripe.handleCardAction(paymentIntent.client_secret)
-                                .then(function(result) {
-                                    if (result.error) {
-                                        console.log(result.error.message);
-                                    } else {
-                                        console.log(paymentIntent.id);
-                                    }
-                                });
-                        } else {
-                            console.log('Unsupported action type:', nextAction.type);
-                        }
-                    } else if (paymentIntent.status === 'succeeded') {
-                        console.log('Payment has been successfully completed');
-                    }
-                }
             });
+
+            const data = await response.json();
+            console.log(data)
+
+            const {
+                client_secret
+            } = data;
+
+            // Confirm PaymentIntent
+            const {
+                paymentIntent,
+                error
+            } = await stripe.confirmPaymentIntent(client_secret)
+
+            if (error) {
+                // Handle payment error
+                console.error(error.message);
+                errorElement.textContent = error.message;
+            } else {
+                console.log(paymentIntent);
+                if (paymentIntent.status === 'requires_action') {
+                    const nextAction = paymentIntent.next_action;
+
+                    if (nextAction.type === 'display_bank_transfer_instructions') {
+                        // Redirect to hosted instructions URL for bank transfer
+                        const hostedInstructionsUrl = nextAction.display_bank_transfer_instructions.hosted_instructions_url;
+                        window.location.href = hostedInstructionsUrl;
+                    } else if (nextAction.type === 'use_stripe_sdk') {
+                        // Handle card action using Stripe.js
+                        stripe.handleCardAction(paymentIntent.client_secret)
+                            .then(function(result) {
+                                if (result.error) {
+                                    console.log(result.error.message);
+                                } else {
+                                    console.log(paymentIntent.id);
+                                }
+                            });
+                    } else {
+                        console.log('Unsupported action type:', nextAction.type);
+                    }
+                } else if (paymentIntent.status === 'succeeded') {
+                    console.log('Payment has been successfully completed');
+                }
+            }
         });
-    });
+
+    })
+</script>
+
 ```
 
 ### Test payment
