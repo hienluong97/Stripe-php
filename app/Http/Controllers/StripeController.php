@@ -39,11 +39,17 @@ class StripeController extends Controller
         $email = $request->input('email');
         $name = $request->input('name');
         Stripe::setApiKey(env('STRIPE_SECRET'));
-
-        $customer = Customer::create([
-            'email' => $email,
-            'name' => $name
-        ]);
+        $existingCustomer = Customer::all(['email' => $email])->data;
+        $customer = '';
+        if (!$existingCustomer) {
+            $customer = Customer::create([
+                'email' => $email,
+                'name' => $name
+            ]);
+        } else {
+            // Handle the case when the customer already exists
+            $customer = $existingCustomer[0];
+        }
 
         // Create a payment intent
         $intent = PaymentIntent::create([
