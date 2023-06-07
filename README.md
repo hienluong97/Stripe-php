@@ -14,21 +14,18 @@ https://ngrok.com/
 
 ```
 ngrok config add-authtoken <Your-Authtoken>
-
 ```
 
 3. Fire it up
 
 ```
 ngrok http 8000
-
 ```
 
 ## Install the stripe-php library:
 
 ```
 composer require stripe/stripe-php
-
 ```
 
 ## Create Stripe test account.
@@ -56,14 +53,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/googlepay', [StripeController::class, 'googlepay'])->name('googlepay');
 Route::post('/payment/intent', [StripeController::class, 'createPaymentIntent'])->name('payment.intent');
-
 ```
 
 #### Set up the necessary routes and controllers:
 
 ```
 php artisan make:controller StripeController
-
 ```
 
 #### app/Http/Controllers/StripeController.php
@@ -167,7 +162,6 @@ https://stripe.com/docs/stripe-js/elements/payment-request-button?client=html#ht
 3. Create a PaymentRequestButton element
 
 ```
-
  const elements = stripe.elements();
     const prButton = elements.create('paymentRequestButton', {
         paymentRequest: paymentRequest,
@@ -265,7 +259,6 @@ https://stripe.com/docs/stripe-js/elements/payment-request-button?client=html#ht
 
 ```
 https://<Ngork_url>/goolepay
-
 ```
 
 # Bank Transfer
@@ -277,8 +270,6 @@ https://<Ngork_url>/goolepay
 ```
 Route::get('/bankpay', [StripeController::class, 'bankpay'])->name('bankpay');
 Route::post('/payment/bank-transfer', [StripeController::class, 'createBankPaymentIntent'])->name('payment.bank-transfer');
-Route::post('/payment/bank-transfer-complete', [StripeController::class, 'completeBankPayment'])->name('payment.bank-transfer.complete');
-
 ```
 
 ### Set up the necessary routes and controllers:
@@ -352,7 +343,7 @@ class StripeController extends Controller
 ```
 <h1>Stripe Bank Transfer Payment</h1>
 <form id="payment-form">
-    <input type="text" id="cardholderName" name="cardholderName" placeholder="cardholderName" required><br>
+    <input type="text" id="customerName" name="customerName" placeholder="customerName" required><br>
     <input type="email" name="email" placeholder="Email" required><br>
     <input type="number" name="amount" placeholder="Amount" required><br>
     <button type="submit">Pay by bank transfer</button>
@@ -393,7 +384,7 @@ class StripeController extends Controller
 
                 body: JSON.stringify({
                     amount: document.getElementById('amount').value,
-                    name: document.getElementById('cardholderName').value,
+                    name: document.getElementById('customerName').value,
                     email: document.getElementById('email').value,
                 })
 
@@ -451,7 +442,7 @@ class StripeController extends Controller
 
 ### Test payment
 
-Note: Make sure to check if your bank account has sufficient funds for payment.
+Note: Make sure your bank account has sufficient funds for payment.
 
 ```
 https://<Ngork_url>/bankpay

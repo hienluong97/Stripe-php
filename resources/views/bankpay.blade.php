@@ -10,7 +10,7 @@
 <h1>Stripe Bank Transfer Payment</h1>
 
 <form id="payment-form">
-    <input type="text" id="cardholderName" name="cardholderName" placeholder="cardholderName" required><br>
+    <input type="text" id="customerName" name="customerName" placeholder="customerName" required><br>
     <input type="email" id="email" name="email" placeholder="Email" required><br>
     <input type="number" id="amount" name="amount" placeholder="Amount" required><br>
     <div id="cardErrors" role="alert" class="text-danger"></div>
@@ -37,7 +37,7 @@
 
                 body: JSON.stringify({
                     amount: document.getElementById('amount').value,
-                    name: document.getElementById('cardholderName').value,
+                    name: document.getElementById('customerName').value,
                     email: document.getElementById('email').value,
                 })
 
