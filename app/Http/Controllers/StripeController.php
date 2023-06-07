@@ -36,9 +36,10 @@ class StripeController extends Controller
 
     public function createBankPaymentIntent(Request $request)
     {
-        $email = $request->input('email');
-        $name = $request->input('name');
+        $email = $request->email;
+        $name = $request->name;
         Stripe::setApiKey(env('STRIPE_SECRET'));
+        // Handle the case when the customer already exists
         $existingCustomer = Customer::all(['email' => $email])->data;
         $customer = '';
         if (!$existingCustomer) {
@@ -47,13 +48,12 @@ class StripeController extends Controller
                 'name' => $name
             ]);
         } else {
-            // Handle the case when the customer already exists
             $customer = $existingCustomer[0];
         }
 
         // Create a payment intent
         $intent = PaymentIntent::create([
-            'amount' => $request->input('amount'),
+            'amount' => $request->amount,
             'currency' => 'jpy',
             'customer' => $customer->id,
             'payment_method_types' => ['customer_balance'],
