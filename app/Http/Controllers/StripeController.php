@@ -78,12 +78,12 @@ class StripeController extends Controller
         ]);
     }
 
-    public function refund()
+    public function bankRefund()
     {
-        return view('refund');
+        return view('bank-refund');
     }
 
-    public function BankRefund(Request $request)
+    public function bankRefundBalance(Request $request)
     {
         $customerID = 'cus_O2L5wMhDKy2bhr';
         Stripe::setApiKey(env('STRIPE_SECRET'));
@@ -133,6 +133,30 @@ class StripeController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Refund failed. Error: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function bankRefundPayment(Request $request)
+    {
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        try {
+            // create refund
+            $refund = Refund::create([
+                'payment_intent' => 'pi_3NHp75Bn8Pm6BjZV3FhEgJva',
+                // 'amount' => 666,
+                'instructions_email' => 'hienluong1997@gmail.com',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Refund created successfully!',
+                'refund' => $refund,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create refund. Error: ' . $e->getMessage(),
             ]);
         }
     }
