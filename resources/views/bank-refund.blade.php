@@ -1,12 +1,10 @@
 <head>
-    <title>Payment Form</title>
+    <title>Refund Form</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
     {{-- to allow mixed content --}}
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 </head>
-
-<script src="https://js.stripe.com/v3/"></script>
 
 
 <section class='ml-4'>
@@ -15,7 +13,7 @@
         @csrf
         <button class="btn btn-primary" type="submit">Refund</button>
     </form>
-    <p id="messageEl" class="text-danger"></p>
+    <p id="refund-balance-form-message" class="text-danger"></p>
 </section>
 
 
@@ -25,17 +23,15 @@
         @csrf
         <button class="btn btn-primary" type="submit">Refund</button>
     </form>
-    <p id="messageEl" class="text-danger"></p>
+    <p id="refund-payment-form-message" class="text-danger"></p>
 </section>
 
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize Stripe
-        var stripe = Stripe("{{ env('STRIPE_KEY') }}");
+        // Handle  refund balance Form submit
         var refundBalanceForm = document.getElementById('refund-balance-form');
-        var errorElement = document.getElementById('messageEl');
-
+        var refundBalanceErrorElement = document.getElementById('refund-balance-form-message');
         refundBalanceForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
@@ -60,11 +56,12 @@
             console.log(success)
             console.log(message)
             console.log(refund)
-            messageEl.innerText = message;
+            refundBalanceErrorElement.innerText = message;
         });
 
-
+        //  Handle  refund payment Form submit
         var refundPaymentForm = document.getElementById('refund-payment-form');
+        var refundPaymentErrorElement = document.getElementById('refund-payment-form-message');
         refundPaymentForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
@@ -89,7 +86,7 @@
             console.log(success)
             console.log(message)
             console.log(refund)
-            messageEl.innerText = message;
+            refundPaymentErrorElement.innerText = message;
         });
     })
 </script>
