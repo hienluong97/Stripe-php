@@ -31,7 +31,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Handle  refund balance Form submit
         var refundBalanceForm = document.getElementById('refund-balance-form');
-        var refundBalanceErrorElement = document.getElementById('refund-balance-form-message');
+        var refundBalanceMessage = document.getElementById('refund-balance-form-message');
         refundBalanceForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
@@ -56,12 +56,12 @@
             console.log(success)
             console.log(message)
             console.log(refund)
-            refundBalanceErrorElement.innerText = message;
+            refundBalanceMessage.innerText = message;
         });
 
         //  Handle  refund payment Form submit
         var refundPaymentForm = document.getElementById('refund-payment-form');
-        var refundPaymentErrorElement = document.getElementById('refund-payment-form-message');
+        var refundPaymentMessage = document.getElementById('refund-payment-form-message');
         refundPaymentForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
@@ -86,7 +86,7 @@
             console.log(success)
             console.log(message)
             console.log(refund)
-            refundPaymentErrorElement.innerText = message;
+            refundPaymentMessage.innerText = message;
         });
     })
 </script>
