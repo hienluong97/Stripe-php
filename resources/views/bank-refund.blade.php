@@ -35,7 +35,6 @@
         refundBalanceForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
-            // Create Payment Intent 
             const response = await fetch("{{ route('bank-refund-balance') }}", {
                 method: 'POST',
                 headers: {
@@ -65,7 +64,6 @@
         refundPaymentForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
-            // Create Payment Intent 
             const response = await fetch("{{ route('bank-refund-payment') }}", {
                 method: 'POST',
                 headers: {
