@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Stripe\Stripe;
 use Stripe\Customer;
 use Stripe\PaymentIntent;
 use Stripe\Refund;
+use \Stripe\Exception\SignatureVerificationException;
+use \Stripe\Webhook;
 
 
 class StripeController extends Controller
@@ -143,7 +146,7 @@ class StripeController extends Controller
         try {
             // create refund
             $refund = Refund::create([
-                'payment_intent' => 'pi_3NHp75Bn8Pm6BjZV3FhEgJva',
+                'payment_intent' => 'pi_3NIoDbBn8Pm6BjZV334VILlX',
                 // 'amount' => 666,
                 'instructions_email' => 'hienluong1997@gmail.com',
             ]);
@@ -159,5 +162,67 @@ class StripeController extends Controller
                 'message' => 'Failed to create refund. Error: ' . $e->getMessage(),
             ]);
         }
+    }
+
+
+
+    public function handleWebhookEvent(Request $request)
+    {
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        $payload = $request->getContent();
+        $sigHeader = $request->header('Stripe-Signature');
+        $endpointSecret = 'whsec_DcFKEFFrKkwx3Dcc7QOR4lzf7J2hcrQL';
+
+        try {
+            $event = Webhook::constructEvent($payload, $sigHeader, $endpointSecret);
+        } catch (SignatureVerificationException $e) {
+            // Validation failed, handle error or finish processing
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+
+        // Handle webhook notifications
+        switch ($event->type) {
+            case 'payment_intent.succeeded':
+                $paymentIntent = $event->data->object;
+                // Then define and call a method to handle the successful
+
+                Log::debug('Webhook received event', [$event->type]);
+                Log::debug('Webhook event status',  ['succeeded']);
+                // return view('webhook-event', ['paymentIntent' => $paymentIntent, 'even_status' => $even_status]);
+                break;
+            case 'payment_intent.payment_failed':
+                $paymentIntent = $event->data->object;
+                // Then define and call a method to handle 
+                Log::debug('Webhook received event', [$event->type]);
+                Log::debug('Webhook event status',  ['payment failed']);
+                break;
+            case 'refund.created':
+                $refund = $event->data->object;
+                // Then define and call a method to handle 
+                Log::debug('Webhook received event', [$event->type]);
+                Log::debug('Webhook event status', ['refund created']);
+                break;
+
+
+            case 'refund.updated':
+                $refund = $event->data->object;
+                // Then define and call a method to handle 
+                Log::debug('Webhook received event', [$event->type]);
+                Log::debug('Webhook event status',  ['refund updated']);
+                break;
+            case 'customer.created':
+                $customer = $event->data->object;
+                // Then define and call a method to handle 
+                Log::debug('Webhook received event', [$event->type]);
+                Log::debug('Webhook event status',  ['customer created']);
+                break;
+                // Handle different events similarly
+            default:
+                // Unexpected event type
+                error_log('Received unknown event type');
+        }
+
+        // Trả về HTTP response với mã status 200
+        return response()->json(['success' => true], 200);
     }
 }
