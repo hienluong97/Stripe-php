@@ -448,3 +448,244 @@ Note: Make sure your bank account has sufficient funds for payment.
 https://<Ngork_url>/bankpay
 
 ```
+
+# Refund
+
+### In your routes/web.php file to handle the payment process.
+
+#### routes/web.php
+
+```
+Route::get('/bank-refund', [StripeController::class, 'bankRefund'])->name('bank-refund');
+Route::post('/refund/balance', [StripeController::class, 'bankRefundBalance'])->name('bank-refund-balance');
+Route::post('/refund/payment', [StripeController::class, 'bankRefundPayment'])->name('bank-refund-payment');
+```
+
+### Set up the necessary routes and controllers:
+
+#### app/Http/Controllers/StripeController.php
+
+```
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Stripe\Stripe;
+use Stripe\PaymentIntent;
+use Stripe\Refund;
+
+class StripeController extends Controller
+{
+
+    public function bankRefund()
+    {
+        return view('bank-refund');
+    }
+
+    public function bankRefundBalance(Request $request)
+    {
+        $customerID = 'cus_O2L5wMhDKy2bhr';
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+
+        try {
+            // get customer’s cash balance
+            $customerBalance = Customer::retrieveCashBalance(
+                $customerID,
+                [
+                    'limit' => null,
+                    'starting_after' => null,
+                    'ending_before' => null,
+                ]
+            );
+            if ($customerBalance) {
+                $availableBalance = $customerBalance->available->jpy;
+
+                if ($availableBalance > 0) {
+                    // create refund
+                    $refund = Refund::create([
+                        'amount' => $availableBalance,
+                        'currency' => 'jpy',
+                        'instructions_email' => 'hienluong1997@gmail.com',
+                        'origin' => 'customer_balance',
+                        'customer' => $customerID,
+                    ]);
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Refund successful!',
+                        'refund' => $refund,
+                        'customer_balance' => $availableBalance
+                    ]);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Refund failed. Error: your’s cash balance equal to 0.',
+                    ]);
+                }
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to retrieve customer balance.',
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Refund failed. Error: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function bankRefundPayment(Request $request)
+    {
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        try {
+            // create refund
+            $refund = Refund::create([
+                'payment_intent' => 'pi_3NHp75Bn8Pm6BjZV3FhEgJva',
+                // 'amount' => 666,
+                'instructions_email' => 'hienluong1997@gmail.com',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Refund created successfully!',
+                'refund' => $refund,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create refund. Error: ' . $e->getMessage(),
+            ]);
+        }
+    }
+}
+```
+
+### Create the view:
+
+##### resources/views/bank-refund.blade.php:
+
+```
+<head>
+    <title>Refund Form</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    {{-- to allow mixed content --}}
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+</head>
+
+// Create form to refund a customer’s cash balance
+
+<section class='ml-4'>
+    <h5 class='mt-4 mb-4'>Refund a customer’s cash balance using the API</h5>
+    <form method="POST" id="refund-balance-form">
+        @csrf
+        <button class="btn btn-primary" type="submit">Refund</button>
+    </form>
+    <p id="refund-balance-form-message" class="text-danger"></p>
+</section>
+
+
+
+// Create form to refund  payment
+
+<section class='ml-4'>
+    <h5 class='mt-4 mb-4'>Refund payment (when the driver refuses) </h5>
+    <form method="POST" id="refund-payment-form">
+        @csrf
+        <button class="btn btn-primary" type="submit">Refund</button>
+    </form>
+    <p id="refund-payment-form-message" class="text-danger"></p>
+</section>
+
+
+```
+
+### Use JavaScript to handle the form submission.
+
+#### resources/views/bank-refund.blade.php
+
+```
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle  refund balance Form submit
+        var refundBalanceForm = document.getElementById('refund-balance-form');
+        var refundBalanceMessage = document.getElementById('refund-balance-form-message');
+        refundBalanceForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const response = await fetch("{{ route('bank-refund-balance') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                body: JSON.stringify({})
+            });
+
+            const data = await response.json();
+            console.log(data)
+            const {
+                success,
+                message,
+                refund
+            } = data;
+
+            console.log(success)
+            console.log(message)
+            console.log(refund)
+            refundBalanceMessage.innerText = message;
+        });
+
+        //  Handle  refund payment Form submit
+        var refundPaymentForm = document.getElementById('refund-payment-form');
+        var refundPaymentMessage = document.getElementById('refund-payment-form-message');
+        refundPaymentForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const response = await fetch("{{ route('bank-refund-payment') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                body: JSON.stringify({})
+            });
+
+            const data = await response.json();
+            console.log(data)
+            const {
+                success,
+                message,
+                refund
+            } = data;
+
+            console.log(success)
+            console.log(message)
+            console.log(refund)
+            refundPaymentMessage.innerText = message;
+        });
+    })
+</script>
+
+```
+
+### Test refund
+
+in controller file
+
+1. Change instructions_email
+2. Change payment_intent that you want to refund
+3. Change amount if you want
+4. Test bank information
+
+```
+account number: 0001234
+bank code: 1100
+branch code: 000
+
+```

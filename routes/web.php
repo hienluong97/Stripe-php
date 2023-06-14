@@ -12,3 +12,9 @@ Route::post('/payment/intent', [StripeController::class, 'createPaymentIntent'])
 Route::get('/bankpay', [StripeController::class, 'bankpay'])->name('bankpay');
 Route::post('/payment/bank-transfer', [StripeController::class, 'createBankPaymentIntent'])->name('payment.bank-transfer');
 Route::post('/payment/bank-transfer-complete', [StripeController::class, 'completeBankPayment'])->name('payment.bank-transfer.complete');
+
+
+
+Route::get('/bank-refund', [StripeController::class, 'bankRefund'])->name('bank-refund');
+Route::post('/refund/balance', [StripeController::class, 'bankRefundBalance'])->name('bank-refund-balance');
+Route::post('/refund/payment', [StripeController::class, 'bankRefundPayment'])->name('bank-refund-payment');
