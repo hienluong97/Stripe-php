@@ -20,4 +20,4 @@ Route::post('/refund/balance', [StripeController::class, 'bankRefundBalance'])->
 Route::post('/refund/payment', [StripeController::class, 'bankRefundPayment'])->name('bank-refund-payment');
 
 
-Route::any('/webhook-event', [StripeController::class, 'handleWebhookEvent'])->name('webhook-event');
+Route::post('/webhook-event', [StripeController::class, 'handleWebhookEvent'])->name('webhook-event');

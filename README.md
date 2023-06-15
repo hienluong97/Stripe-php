@@ -689,3 +689,116 @@ bank code: 1100
 branch code: 000
 
 ```
+
+# WEBHOOK
+
+#### Create a route to handle the webhook in the web.php file
+
+```
+Route::post('/webhook-event', [StripeController::class, 'handleWebhookEvent'])->name('webhook-event');
+
+```
+
+#### In the StripeController, add the handleWebhookEvent method to handle the webhook from Stripe:
+
+Note: change value of $endpointSecret
+
+You get this value from https://dashboard.stripe.com/test/webhooks/{id}
+
+```
+
+use \Stripe\Exception\SignatureVerificationException;
+use \Stripe\Webhook;
+
+class StripeController extends Controller
+{
+   public function handleWebhookEvent(Request $request)
+    {
+        $payload = $request->getContent();
+        $sigHeader = $request->header('Stripe-Signature');
+        $endpointSecret = 'whsec_T0B40FdLz03pj5lhbvfRzhhFPHpKLmui';
+
+        try {
+            $event = Webhook::constructEvent($payload, $sigHeader, $endpointSecret);
+        } catch (SignatureVerificationException $e) {
+            // Validation failed, handle error or finish processing
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+
+        // Handle webhook notifications
+        switch ($event->type) {
+            case 'payment_intent.succeeded':
+                $paymentIntent = $event->data->object;
+                // Then define and call a method to handle the successful
+
+                Log::debug('Webhook received event', [$event->type]);
+                Log::debug('Webhook event status',  ['succeeded']);
+                // return view('webhook-event', ['paymentIntent' => $paymentIntent, 'even_status' => $even_status]);
+                break;
+            case 'payment_intent.payment_failed':
+                $paymentIntent = $event->data->object;
+                // Then define and call a method to handle
+                Log::debug('Webhook received event', [$event->type]);
+                Log::debug('Webhook event status',  ['payment failed']);
+                break;
+            case 'refund.created':
+                $refund = $event->data->object;
+                // Then define and call a method to handle
+                Log::debug('Webhook received event', [$event->type]);
+                Log::debug('Webhook event status', ['refund created']);
+                break;
+
+
+            case 'refund.updated':
+                $refund = $event->data->object;
+                // Then define and call a method to handle
+                Log::debug('Webhook received event', [$event->type]);
+                Log::debug('Webhook event status',  ['refund updated']);
+                break;
+            case 'customer.created':
+                $customer = $event->data->object;
+                // Then define and call a method to handle
+                Log::debug('Webhook received event', [$event->type]);
+                Log::debug('Webhook event status',  ['customer created']);
+                break;
+                // Handle different events similarly
+            default:
+                // Unexpected event type
+                error_log('Received unknown event type');
+        }
+
+        // Trả về HTTP response với mã status 200
+        return response()->json(['success' => true], 200);
+    }
+    }
+
+
+
+```
+
+#### Remove CSRF token authentication for Stripe's webhook
+
+```
+class VerifyCsrfToken extends Middleware
+{
+    /**
+     * The URIs that should be excluded from CSRF verification.
+     *
+     * @var array
+     */
+    protected $except = [
+        'webhook-event'
+    ];
+}
+```
+
+##### Go to the Webhook settings on the Stripe dashboard and configure the webhook URL to point to the route you created (/webhook-event).
+
+example:
+
+```
+https://4d29-58-187-108-210.ngrok-free.app/webhook-event
+
+```
+
+#### Create payment and watch change in storage/logs/laravel.log

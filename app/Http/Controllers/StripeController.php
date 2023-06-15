@@ -168,10 +168,9 @@ class StripeController extends Controller
 
     public function handleWebhookEvent(Request $request)
     {
-        Stripe::setApiKey(env('STRIPE_SECRET'));
         $payload = $request->getContent();
         $sigHeader = $request->header('Stripe-Signature');
-        $endpointSecret = 'whsec_DcFKEFFrKkwx3Dcc7QOR4lzf7J2hcrQL';
+        $endpointSecret = 'whsec_T0B40FdLz03pj5lhbvfRzhhFPHpKLmui';
 
         try {
             $event = Webhook::constructEvent($payload, $sigHeader, $endpointSecret);
