@@ -704,6 +704,7 @@ Route::post('/webhook-event', [StripeController::class, 'handleWebhookEvent'])->
 Note: change value of $endpointSecret
 
 You get this value from https://dashboard.stripe.com/test/webhooks/{id}
+
 $endpointSecret is Signing secret
 ![](img/image.png)
 
