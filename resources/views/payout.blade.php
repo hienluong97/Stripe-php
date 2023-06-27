@@ -31,13 +31,7 @@
             });
 
             const data = await response.json();
-
-            const {
-                account, bankAccountToken, externalAccount
-            } = data;
-            console.log(account)
-            console.log(bankAccountToken)
-            console.log(externalAccount)
+            console.log(data)
 
         });
 

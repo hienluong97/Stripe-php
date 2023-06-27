@@ -89,67 +89,18 @@ class StripeController extends Controller
     {
 
         Stripe::setApiKey(env('STRIPE_SECRET'));
-        // Tạo một tài khoản trong Stripe
-        // $account = Account::create([
-        //     'type' => 'custom',
-        //     'country' => 'JP',
-        //     'email' => 'hienluong1997@gmail.com',
-        //     'capabilities' => [
-        //         'card_payments' => ['requested' => true],
-        //         'transfers' => ['requested' => true],
-        //         'bank_transfer_payments' => ['requested' => true],
-        //     ],
-        // ]);
 
-        // Tạo token cho thông tin ngân hàng hoặc thẻ tín dụng
-        // $bankAccountToken = Token::create([
-        //     'bank_account' => [
-        //         'country' => 'JP',
-        //         'currency' => 'jpy',
-        //         'account_holder_name' => 'Test name',
-        //         'account_holder_type' => 'individual',
-        //         'routing_number' => '1100000',
-        //         'account_number' => '0001234',
-        //     ],
-        // ]);
+        $payout = Payout::create([
+            'amount' => 100,
+            'currency' => 'jpy', // Đơn vị tiền tệ
+            'destination' => 'ba_1NNX2sB4CTSrzQnsvuDG4Ka5', // ID tài khoản ngân hàng đích
+        ], ['stripe_account' => 'acct_1NNWEiB4CTSrzQns']);
 
-        // Tạo một tài khoản trong Stripe
-        // $account = Account::create([
-        //     'type' => 'custom',
-        //     'country' => 'JP',
-        //     'email' => 'hienluong1997@gmail.com',
-        //     'capabilities' => [
-        //         'card_payments' => ['requested' => true],
-        //         'transfers' => ['requested' => true],
-        //         'bank_transfer_payments' => ['requested' => true],
-        //     ],
-        //     'business_type' => 'individual',
-        //     'individual' => [
-        //         'first_name' => 'Test',
-        //         'last_name' => 'Account',
-        //         'email' => 'hienluong1997@gmail.com',
-        //     ],
-        //     'external_account' => $bankAccountToken->id,
-        // ]);
-
-
-        // $payout = Payout::create([
-        //     'amount' => 100,
-        //     'currency' => 'jpy',
-        // ]);
-
-        $transfer = Transfer::create([
-            'amount' => 1000,
-            'currency' => 'jpy',
-            'destination' => 'acct_1NI4x3BNuopoBHPS',  // ID của tài khoản Stripe đích (người nhận)
-            // ID của giao dịch nguồn (ví dụ: charge)
-        ]);
 
 
         // Return the payment intent information to display to the user
         return response()->json([
-            'transfer' => $transfer,
-            // 'payout' => $payout
+            'payout' => $payout,
         ]);
     }
 }
