@@ -6,10 +6,9 @@
 </head>
 
 <script src="https://js.stripe.com/v3/"></script>
-<h1>Create bank</h1>
+<h1>Create Payout</h1>
 
 <body class="m-4">
-
     <span> {{$id}}</span>
     <form action="{{ route('store-bank') }}" method="POST">
         @csrf

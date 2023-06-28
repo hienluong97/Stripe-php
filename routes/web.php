@@ -27,3 +27,6 @@ Route::post('/store-bank', [StripeController::class, 'storeExternalAccount'])->n
 Route::get('/create-bank', [StripeController::class, 'createBank'])->name('create-bank');
 Route::get('/payout', [StripeController::class, 'payout'])->name('payout');
 Route::post('/payout', [StripeController::class, 'createPayout'])->name('createPayout');
+Route::get('/payout-result', [StripeController::class, 'createBankResult'])->name('payout-result');
+
+Route::get('/list-payout', [StripeController::class, 'getListPayout'])->name('list-payout');

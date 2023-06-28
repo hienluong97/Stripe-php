@@ -7,7 +7,7 @@
 
 
 <body class="mt-4 ml-4">
-    @foreach ($data as $item)
+    @foreach ($account_list as $item)
     <form id="payout" action="{{ route('createPayout') }}" method="POST">
         @csrf
         <input type="hidden" name="bank_id" value="{{ $item->id}}">

@@ -29,4 +29,12 @@
         <button type="submit" class="btn btn-primary">Add Bank Account</button>
         <a href="{{ route('list-bank') }}" class="btn btn-primary ">Show list bank</a>
     </form>
+
+    @if(isset($external_account))
+    <h5 class="alert alert-success"> Add bank account successfull with id :{{$external_account->id}}</h5>
+    @endif
+
+    @if(isset($error))
+    <h5 class="alert alert-danger"> {{$error}}</h5>
+    @endif
 </body>

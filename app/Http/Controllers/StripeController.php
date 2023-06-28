@@ -235,13 +235,32 @@ class StripeController extends Controller
         return view('payout');
     }
 
+    public function getExternalAccounts(Request $request)
+    {
+        try {
+            Stripe::setApiKey(env('STRIPE_SECRET'));
+            $externalAccounts = Account::allExternalAccounts(
+                'acct_1NNWEiB4CTSrzQns', // ID of connected account
+                [
+                    'object' => 'bank_account',
+                    // 'limit' => '',
+                ]
+            );
+
+            return view('list-bank')->with('account_list', $externalAccounts);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get list external accounts . Error: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
 
     public function createBank()
     {
         return view('create-bank');
     }
-
-
     public function storeExternalAccount(Request $request)
     {
 
@@ -250,41 +269,46 @@ class StripeController extends Controller
         $routing_number = $request->input('routing_number');
 
         Stripe::setApiKey(env('STRIPE_SECRET'));
-        $external_account = Account::createExternalAccount(
-            'acct_1NNWEiB4CTSrzQns', // ID của connected account
-            [
-                'external_account' => [
-                    'object' => 'bank_account',
-                    'country' => 'JP',
-                    'currency' => 'jpy',
-                    'account_number' =>  $account_number,
-                    'routing_number' => $routing_number,
-                    'account_holder_name' =>  $account_holder_name,
-                    'account_holder_type' => 'individual',
-                ],
-            ]
-        );
-
-        // return response()->json([
-        //     'external_account' => $external_account,
-        // ]);
-        return redirect()->back();
+        try {
+            $external_account = Account::createExternalAccount(
+                'acct_1NNWEiB4CTSrzQns', // ID của connected account
+                [
+                    'external_account' => [
+                        'object' => 'bank_account',
+                        'country' => 'JP',
+                        'currency' => 'jpy',
+                        'account_number' =>  $account_number,
+                        'routing_number' => $routing_number,
+                        'account_holder_name' =>  $account_holder_name,
+                        'account_holder_type' => 'individual',
+                    ],
+                ]
+            );
+            return view('create-bank')->with('external_account', $external_account);
+        } catch (\Exception $e) {
+            return view('create-bank')->with('error', 'Failed to create external accounts . Error: ' . $e->getMessage());
+        }
     }
 
-
-    public function getExternalAccounts(Request $request)
+    public function payoutResult()
     {
-        Stripe::setApiKey(env('STRIPE_SECRET'));
-        $externalAccounts = Account::allExternalAccounts(
-            'acct_1NNWEiB4CTSrzQns', // ID of connected account
-            [
-                'object' => 'bank_account',
-                // 'limit' => '',
-            ]
-        );
+        return view('payout-result');
+    }
 
-        // Return the payment intent information to display to the user
-        return view('list-bank')->with('data', $externalAccounts);
+    public function createPayoutOld(Request $request)
+    {
+        $destination = $request->input('bank_id');
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        try {
+            $payout = Payout::create([
+                'amount' => 131,
+                'currency' => 'jpy', // Đơn vị tiền tệ
+                'destination' => $destination, // ID tài khoản ngân hàng đích
+            ], ['stripe_account' => 'acct_1NNWEiB4CTSrzQns']);
+            return view('payout-result')->with('payout', $payout);
+        } catch (\Exception $e) {
+            return view('create-bank')->with('error', 'Failed to create payout . Error: ' . $e->getMessage());
+        }
     }
 
 
@@ -292,26 +316,20 @@ class StripeController extends Controller
     {
         $destination = $request->input('bank_id');
         Stripe::setApiKey(env('STRIPE_SECRET'));
+        try {
+            $payout = Payout::create([
+                'amount' => 131,
+                'currency' => 'jpy',
+                'destination' => $destination, // ID of bank
+                'description' => 'STRIPE PAYOUT for driver'
+            ], ['stripe_account' => 'acct_1NNWEiB4CTSrzQns']);
 
-        $payout = Payout::create([
-            'amount' => 131,
-            'currency' => 'jpy', // Đơn vị tiền tệ
-            'destination' => $destination, // ID tài khoản ngân hàng đích
-        ], ['stripe_account' => 'acct_1NNWEiB4CTSrzQns']);
-
-
-        // $payout = Topup::create([
-        //     'amount' => 2000,
-        //     'currency' => 'jpy',
-        //     'description' => 'Top-up for Jenny Rosen',
-        //     'statement_descriptor' => 'Top-up',
-        // ]);
-
-        // Return the payment intent information to display to the user
-        return response()->json([
-            'payout' => $payout,
-        ]);
+            return view('payout-result')->with('payout', $payout);
+        } catch (\Exception $e) {
+            return view('payout-result')->with('error', 'Failed to create payout. Error: ' . $e->getMessage());
+        }
     }
+
 
     public function createTopup(Request $request)
     {
@@ -328,5 +346,24 @@ class StripeController extends Controller
         return response()->json([
             'topup' => $topup,
         ]);
+    }
+
+
+    public function getListPayout(Request $request)
+    {
+        $destination = $request->input('bank_id');
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        try {
+            $payout_list = Payout::all([
+                'limit' => 100,
+            ], ['stripe_account' => 'acct_1NNWEiB4CTSrzQns']);
+
+            return view('list-payout')->with('payout_list', $payout_list);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get payout list . Error: ' . $e->getMessage(),
+            ]);
+        }
     }
 }
