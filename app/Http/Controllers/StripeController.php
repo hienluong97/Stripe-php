@@ -295,23 +295,6 @@ class StripeController extends Controller
         return view('payout-result');
     }
 
-    public function createPayoutOld(Request $request)
-    {
-        $destination = $request->input('bank_id');
-        Stripe::setApiKey(env('STRIPE_SECRET'));
-        try {
-            $payout = Payout::create([
-                'amount' => 131,
-                'currency' => 'jpy', // Đơn vị tiền tệ
-                'destination' => $destination, // ID tài khoản ngân hàng đích
-            ], ['stripe_account' => 'acct_1NNWEiB4CTSrzQns']);
-            return view('payout-result')->with('payout', $payout);
-        } catch (\Exception $e) {
-            return view('create-bank')->with('error', 'Failed to create payout . Error: ' . $e->getMessage());
-        }
-    }
-
-
     public function createPayout(Request $request)
     {
         $destination = $request->input('bank_id');
@@ -327,6 +310,24 @@ class StripeController extends Controller
             return view('payout-result')->with('payout', $payout);
         } catch (\Exception $e) {
             return view('payout-result')->with('error', 'Failed to create payout. Error: ' . $e->getMessage());
+        }
+    }
+
+    public function getListPayout(Request $request)
+    {
+        $destination = $request->input('bank_id');
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        try {
+            $payout_list = Payout::all([
+                'limit' => 100,
+            ], ['stripe_account' => 'acct_1NNWEiB4CTSrzQns']);
+
+            return view('list-payout')->with('payout_list', $payout_list);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get payout list . Error: ' . $e->getMessage(),
+            ]);
         }
     }
 
@@ -346,24 +347,5 @@ class StripeController extends Controller
         return response()->json([
             'topup' => $topup,
         ]);
-    }
-
-
-    public function getListPayout(Request $request)
-    {
-        $destination = $request->input('bank_id');
-        Stripe::setApiKey(env('STRIPE_SECRET'));
-        try {
-            $payout_list = Payout::all([
-                'limit' => 100,
-            ], ['stripe_account' => 'acct_1NNWEiB4CTSrzQns']);
-
-            return view('list-payout')->with('payout_list', $payout_list);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to get payout list . Error: ' . $e->getMessage(),
-            ]);
-        }
     }
 }
