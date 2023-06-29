@@ -805,3 +805,280 @@ https://4d29-58-187-108-210.ngrok-free.app/webhook-event
 ```
 
 #### Create payment and watch change in storage/logs/laravel.log
+
+# PAYOUT
+
+## Use Stripe connect
+
+Prerequisites
+
+https://stripe.com/docs/connect/add-and-pay-out-guide#with-code-prerequisites
+
+## create connected account in stripe dashboard
+
+https://dashboard.stripe.com/test/connect/accounts/overview
+
+verify account to status 'completed'.
+
+## Create external account (add bank account for connected account)
+
+#### app/Http/Controllers/StripeController.php
+
+```
+    public function createBank()
+    {
+        return view('create-bank');
+    }
+    public function storeExternalAccount(Request $request)
+    {
+
+        $account_holder_name = $request->input('account_holder_name');
+        $account_number = $request->input('account_number');
+        $routing_number = $request->input('routing_number');
+
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        try {
+            $external_account = Account::createExternalAccount(
+                'acct_1NNWEiB4CTSrzQns', // ID của connected account
+                [
+                    'external_account' => [
+                        'object' => 'bank_account',
+                        'country' => 'JP',
+                        'currency' => 'jpy',
+                        'account_number' =>  $account_number,
+                        'routing_number' => $routing_number,
+                        'account_holder_name' =>  $account_holder_name,
+                        'account_holder_type' => 'individual',
+                    ],
+                ]
+            );
+            return view('create-bank')->with('external_account', $external_account);
+        } catch (\Exception $e) {
+            return view('create-bank')->with('error', 'Failed to create external accounts . Error: ' . $e->getMessage());
+        }
+    }
+
+```
+
+#### resources/views/create-bank.blade.php
+
+```
+<head>
+    <title>Create bank</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    {{-- to allow mixed content --}}
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+</head>
+
+<h1>Create bank</h1>
+
+<body class="m-4">
+    <form action="{{ route('store-bank') }}" method="POST">
+        @csrf
+        <div class="form-group">
+            <label for="account_holder_name">Account Holder Name</label>
+            <input type="text" name="account_holder_name" id="account_holder_name" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label for="account_number">Account Number</label>
+            <input type="text" name="account_number" id="account_number" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label for="bank_name">Routing Number</label>
+            <input type="text" name="routing_number" id="routing_number" class="form-control" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Add Bank Account</button>
+        <a href="{{ route('list-bank') }}" class="btn btn-primary ">Show list bank</a>
+    </form>
+
+    @if(isset($external_account))
+    <h5 class="alert alert-success"> Add bank account successfull with id :{{$external_account->id}}</h5>
+    @endif
+
+    @if(isset($error))
+    <h5 class="alert alert-danger"> {{$error}}</h5>
+    @endif
+</body>
+
+```
+
+## Show list bank account to payout
+
+#### app/Http/Controllers/StripeController.php
+
+```
+   public function getExternalAccounts(Request $request)
+    {
+        try {
+            Stripe::setApiKey(env('STRIPE_SECRET'));
+            $externalAccounts = Account::allExternalAccounts(
+                'acct_1NNWEiB4CTSrzQns', // ID of connected account
+                [
+                    'object' => 'bank_account',
+                    // 'limit' => '',
+                ]
+            );
+
+            return view('list-bank')->with('account_list', $externalAccounts);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get list external accounts . Error: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+```
+
+#### resources/views/list-bank.blade.php
+
+```
+<head>
+    <title>List Bank</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    {{-- to allow mixed content --}}
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+</head>
+
+
+<body class="mt-4 ml-4">
+    @foreach ($account_list as $item)
+    <form id="payout" action="{{ route('createPayout') }}" method="POST">
+        @csrf
+        <input type="hidden" name="bank_id" value="{{ $item->id}}">
+        <span>{{ $item->account_holder_name}} - bank number last : {{ $item->last4}}</span>
+        <button type="submit" class="btn-primary mt-3">payout</button>
+    </form>
+    @endforeach
+
+    <a href="{{ route('create-bank') }}" class="btn btn-primary mt-3">Add bank</a>
+</body>
+```
+
+## Create Payout
+
+#### app/Http/Controllers/StripeController.php
+
+```
+   public function createPayout(Request $request)
+    {
+        $destination = $request->input('bank_id');
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        try {
+            $payout = Payout::create([
+                'amount' => 131,
+                'currency' => 'jpy',
+                'destination' => $destination, // ID of bank
+                'description' => 'STRIPE PAYOUT for driver'
+            ], ['stripe_account' => 'acct_1NNWEiB4CTSrzQns']);
+
+            return view('payout-result')->with('payout', $payout);
+        } catch (\Exception $e) {
+            return view('payout-result')->with('error', 'Failed to create payout. Error: ' . $e->getMessage());
+        }
+    }
+
+
+ public function payoutResult()
+    {
+        return view('payout-result');
+    }
+
+```
+
+#### resources/views/payout-result.blade.php
+
+```
+
+<head>
+    <title>payout-result</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    {{-- to allow mixed content --}}
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+</head>
+
+<body class="m-4">
+    <h1>payout-result</h1>
+    @if(isset($payout))
+    <h5 class="alert alert-success"> Create payout successfull with id :{{$payout->id}}</h5>
+    @endif
+
+    @if(isset($error))
+    <h5 class="alert alert-danger"> {{$error}}</h5>
+    @endif
+    <a href="{{ route('list-bank') }}" class="btn btn-primary ">Back to list bank</a>
+    <a href="{{ route('list-payout') }}" class="btn btn-primary ">Back to list payout</a>
+</body>
+
+```
+
+## Check payout status
+
+#### app/Http/Controllers/StripeController.php
+
+```
+      public function getListPayout(Request $request)
+    {
+        $destination = $request->input('bank_id');
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        try {
+            $payout_list = Payout::all([
+                'limit' => 100,
+            ], ['stripe_account' => 'acct_1NNWEiB4CTSrzQns']);
+
+            return view('list-payout')->with('payout_list', $payout_list);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get payout list . Error: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+```
+
+#### resources/views/payout-list.blade.php
+
+```
+<head>
+    <title>List Payout</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    {{-- to allow mixed content --}}
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+</head>
+
+
+<body class="mt-4 ml-4">
+    @foreach ($payout_list as $payout)
+
+    <div>
+        <p>{{ $payout->id}}</p> <span>{{ $payout->description}}</span>
+        <span class="btn-primary mt-3">{{ $payout->status}}</span>
+        <span class="btn-primary  alert-danger mt-3">{{ $payout->failure_message}}</span>
+    </div>
+    @endforeach
+</body>
+```
+
+## Test Payout
+
+#### Add real bank accout for stripe admin
+
+https://dashboard.stripe.com/settings/payouts
+
+#### Transfer Balances from admin account to connected account
+
+https://dashboard.stripe.com/test/connect/transfers
+
+#### Use list test account provides form stripe to add bank account
+
+https://stripe.com/docs/connect/testing#payouts
+
+#### Watch payout log
+
+note: change your connected account in bellow link 'acct_1NNWEiB4CTSrzQns'
+
+https://dashboard.stripe.com/test/connect/accounts/acct_1NNWEiB4CTSrzQns/activity

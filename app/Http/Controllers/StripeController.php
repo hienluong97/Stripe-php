@@ -12,10 +12,10 @@ use \Stripe\Exception\SignatureVerificationException;
 use \Stripe\Webhook;
 
 use Stripe\Account;
-use Stripe\Token;
 use Stripe\Payout;
 use Stripe\Topup;
 use Stripe\Transfer;
+use Stripe\Source;
 
 class StripeController extends Controller
 {
@@ -290,27 +290,38 @@ class StripeController extends Controller
         }
     }
 
+
+    public function createCard()
+    {
+        return view('create-card');
+    }
+    public function storeExternalAccountForCard(Request $request)
+    {
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        $token = $request->token;
+
+        try {
+            $external_account = Account::createExternalAccount(
+                'acct_1NNWEiB4CTSrzQns', // ID của connected account
+                [
+                    'external_account' => $token,
+                ],
+            );
+
+            return view('create-card')->with('external_account', $external_account);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to create card external accounts. Error: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+
     public function payoutResult()
     {
         return view('payout-result');
     }
-
-    public function createPayoutOld(Request $request)
-    {
-        $destination = $request->input('bank_id');
-        Stripe::setApiKey(env('STRIPE_SECRET'));
-        try {
-            $payout = Payout::create([
-                'amount' => 131,
-                'currency' => 'jpy', // Đơn vị tiền tệ
-                'destination' => $destination, // ID tài khoản ngân hàng đích
-            ], ['stripe_account' => 'acct_1NNWEiB4CTSrzQns']);
-            return view('payout-result')->with('payout', $payout);
-        } catch (\Exception $e) {
-            return view('create-bank')->with('error', 'Failed to create payout . Error: ' . $e->getMessage());
-        }
-    }
-
 
     public function createPayout(Request $request)
     {
@@ -330,25 +341,6 @@ class StripeController extends Controller
         }
     }
 
-
-    public function createTopup(Request $request)
-    {
-        Stripe::setApiKey(env('STRIPE_SECRET'));
-
-        $topup = Topup::create([
-            'amount' => 2000,
-            'currency' => 'jpy',
-            'description' => 'Top-up for Jenny Rosen',
-            'statement_descriptor' => 'Top-up',
-        ]);
-
-        // Return the payment intent information to display to the user
-        return response()->json([
-            'topup' => $topup,
-        ]);
-    }
-
-
     public function getListPayout(Request $request)
     {
         $destination = $request->input('bank_id');
@@ -365,5 +357,23 @@ class StripeController extends Controller
                 'message' => 'Failed to get payout list . Error: ' . $e->getMessage(),
             ]);
         }
+    }
+
+
+    public function createTopup(Request $request)
+    {
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+
+        $topup = Topup::create([
+            'amount' => 2000,
+            'currency' => 'jpy',
+            'description' => 'Top-up for Jenny Rosen',
+            'statement_descriptor' => 'Top-up',
+        ]);
+
+        // Return the payment intent information to display to the user
+        return response()->json([
+            'topup' => $topup,
+        ]);
     }
 }
