@@ -12,10 +12,10 @@ use \Stripe\Exception\SignatureVerificationException;
 use \Stripe\Webhook;
 
 use Stripe\Account;
-use Stripe\Token;
 use Stripe\Payout;
 use Stripe\Topup;
 use Stripe\Transfer;
+use Stripe\Source;
 
 class StripeController extends Controller
 {
@@ -289,6 +289,34 @@ class StripeController extends Controller
             return view('create-bank')->with('error', 'Failed to create external accounts . Error: ' . $e->getMessage());
         }
     }
+
+
+    public function createCard()
+    {
+        return view('create-card');
+    }
+    public function storeExternalAccountForCard(Request $request)
+    {
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        $token = $request->token;
+
+        try {
+            $external_account = Account::createExternalAccount(
+                'acct_1NNWEiB4CTSrzQns', // ID của connected account
+                [
+                    'external_account' => $token,
+                ],
+            );
+
+            return view('create-card')->with('external_account', $external_account);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to create card external accounts. Error: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
 
     public function payoutResult()
     {
