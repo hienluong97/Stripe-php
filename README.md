@@ -1010,6 +1010,7 @@ verify account to status 'completed'.
     <h5 class="alert alert-danger"> {{$error}}</h5>
     @endif
     <a href="{{ route('list-bank') }}" class="btn btn-primary ">Back to list bank</a>
+    <a href="{{ route('list-payout') }}" class="btn btn-primary ">Back to list payout</a>
 </body>
 
 ```

@@ -25,8 +25,7 @@ Route::post('/webhook-event', [StripeController::class, 'handleWebhookEvent'])->
 Route::get('/list-bank', [StripeController::class, 'getExternalAccounts'])->name('list-bank');
 Route::post('/store-bank', [StripeController::class, 'storeExternalAccount'])->name('store-bank');
 Route::get('/create-bank', [StripeController::class, 'createBank'])->name('create-bank');
-Route::get('/payout', [StripeController::class, 'payout'])->name('payout');
+
 Route::post('/payout', [StripeController::class, 'createPayout'])->name('createPayout');
 Route::get('/payout-result', [StripeController::class, 'createBankResult'])->name('payout-result');
-
 Route::get('/list-payout', [StripeController::class, 'getListPayout'])->name('list-payout');
