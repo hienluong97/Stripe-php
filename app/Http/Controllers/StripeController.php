@@ -360,7 +360,13 @@ class StripeController extends Controller
     }
 
 
-    public function createTopup(Request $request)
+    public function createTopup()
+    {
+        return view('create-topup');
+    }
+
+
+    public function storeTopupOld(Request $request)
     {
         Stripe::setApiKey(env('STRIPE_SECRET'));
 
@@ -375,5 +381,34 @@ class StripeController extends Controller
         return response()->json([
             'topup' => $topup,
         ]);
+    }
+
+    public function storeTopup(Request $request)
+    {
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        $token = $request->token;
+
+        $source = Source::create([
+            'type' => 'card',
+            'currency' => 'jpy',
+            'token' => $token,
+        ]);
+
+        try {
+
+            $topup = Topup::create([
+                'amount' => 2000,
+                'currency' => 'jpy',
+                'description' => 'Top-up for Jenny Rosen',
+                'statement_descriptor' => 'Top-up',
+                'source' => $source->id
+            ]);
+            return view('create-topup')->with('topup', $topup);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to create topup. Error: ' . $e->getMessage(),
+            ]);
+        }
     }
 }
