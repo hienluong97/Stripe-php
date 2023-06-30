@@ -1,11 +1,11 @@
 <head>
-    <title>Create card</title>
+    <title>Top-🔺 </title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     {{-- to allow mixed content --}}
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 </head>
 
-<h1>Create Card</h1>
+<h1>Create top-up</h1>
 
 <body class="m-4">
 
@@ -18,7 +18,7 @@
             </div>
             <div id="cardElement" class="form-control"></div>
             <div id="cardErrors" role="alert" class="text-danger"></div>
-            <button id="submit" type="submit" class="btn btn-primary mt-3">Add card</button>
+            <button id="submit" type="submit" class="btn btn-primary mt-3">Top-up</button>
         </form>
         <div id="message" role="alert" class="text-danger"></div>
     </div>
