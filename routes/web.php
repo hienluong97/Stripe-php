@@ -36,3 +36,6 @@ Route::post('/bank-transfer', [StripeController::class, 'bankTransfer'])->name('
 
 Route::get('/create-topup', [StripeController::class, 'createTopup'])->name('create-topup');
 Route::post('/store-topup', [StripeController::class, 'storeTopup'])->name('store-topup');
+
+Route::get('/create-transfer', [StripeController::class, 'createTransfer'])->name('create-transfer');
+Route::post('/store-transfer', [StripeController::class, 'storeTransfer'])->name('store-transfer');

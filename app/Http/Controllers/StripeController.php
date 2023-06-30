@@ -366,23 +366,6 @@ class StripeController extends Controller
     }
 
 
-    public function storeTopupOld(Request $request)
-    {
-        Stripe::setApiKey(env('STRIPE_SECRET'));
-
-        $topup = Topup::create([
-            'amount' => 2000,
-            'currency' => 'jpy',
-            'description' => 'Top-up for Jenny Rosen',
-            'statement_descriptor' => 'Top-up',
-        ]);
-
-        // Return the payment intent information to display to the user
-        return response()->json([
-            'topup' => $topup,
-        ]);
-    }
-
     public function storeTopup(Request $request)
     {
         Stripe::setApiKey(env('STRIPE_SECRET'));
@@ -401,14 +384,39 @@ class StripeController extends Controller
                 'currency' => 'jpy',
                 'description' => 'Top-up for Jenny Rosen',
                 'statement_descriptor' => 'Top-up',
-                'source' => $source->id
+                'source' => $source->id,
             ]);
+
             return view('create-topup')->with('topup', $topup);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to create topup. Error: ' . $e->getMessage(),
             ]);
+        }
+    }
+
+
+
+    public function createTransfer()
+    {
+        return view('create-transfer');
+    }
+
+
+    public function storeTransfer(Request $request)
+    {
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        try {
+            $transfer = Transfer::create([
+                'amount' => 500,
+                'currency' => 'jpy',
+                'destination' => 'acct_1NNWEiB4CTSrzQns',
+            ]);
+
+            return view('create-transfer')->with('transfer', $transfer);
+        } catch (\Exception $e) {
+            return view('create-transfer')->with('error', 'Failed to create transfer. Error: ' . $e->getMessage());
         }
     }
 }
