@@ -32,3 +32,8 @@ Route::post('/payout', [StripeController::class, 'createPayout'])->name('createP
 Route::get('/payout-result', [StripeController::class, 'createBankResult'])->name('payout-result');
 Route::get('/list-payout', [StripeController::class, 'getListPayout'])->name('list-payout');
 Route::post('/bank-transfer', [StripeController::class, 'bankTransfer'])->name('bank-transfer');
+
+
+
+Route::get('/add-card', [StripeController::class, 'addCard'])->name('add-card');
+Route::post('/check-card', [StripeController::class, 'checkCard'])->name('check-card');

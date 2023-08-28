@@ -12,6 +12,7 @@ use \Stripe\Exception\SignatureVerificationException;
 use \Stripe\Webhook;
 
 use Stripe\Account;
+use Stripe\CustomerBalanceTransaction;
 use Stripe\Payout;
 use Stripe\Topup;
 use Stripe\Transfer;
@@ -375,5 +376,67 @@ class StripeController extends Controller
         return response()->json([
             'topup' => $topup,
         ]);
+    }
+
+    //add card
+    public function addCard()
+    {
+        return view('add-card');
+    }
+    public function checkCard(Request $request)
+    {
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        $token = $request->token;
+        $fingerprint_already_exists = '';
+
+        try {
+            $source = Customer::createSource(
+                'cus_O7zzLRmeqOWo4Q',
+                ['source' => $token]
+            );
+
+            // return view('add-card')->with('source', $source);
+            // return response()->json(['source' => $source]);
+            $fingerprint_already_exists = $source->fingerprint;
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to add card. Error: ' . $e->getMessage(),
+            ]);
+        }
+
+
+        $customer = Customer::allSources(
+            'cus_O7zzLRmeqOWo4Q',
+            []
+        );
+
+        $list_sources = $customer['data'];
+        $is_exit_card = false;
+        foreach ($list_sources as $source) {
+            if ($fingerprint_already_exists === $source->fingerprint) {
+                $is_exit_card = true;
+            }
+        }
+
+
+        return response()->json(['list_sources' => $list_sources]);
+
+
+
+        // try {
+        //     $source = Customer::createSource(
+        //         'cus_O7zzLRmeqOWo4Q',
+        //         ['source' => $token]
+        //     );
+
+        //     // return view('add-card')->with('source', $source);
+        //     return response()->json(['source' => $source]);
+        // } catch (\Exception $e) {
+        //     return response()->json([
+        //         'status' => false,
+        //         'message' => 'Failed to add card. Error: ' . $e->getMessage(),
+        //     ]);
+        // }
     }
 }
