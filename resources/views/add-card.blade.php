@@ -9,14 +9,6 @@
 
 <body class="m-4">
 
-    {{-- @if(isset($source))
-    <h5 class="alert alert-success"> successfully with id :{{$source->id}}</h5>
-    @endif --}}
-
-    {{-- @if(isset($error))
-    <h5 class="alert alert-danger"> {{$error}}</h5>
-    @endif --}}
-
     <div class="container mt-4">
         <form id="card-form">
             @csrf
@@ -57,7 +49,7 @@
             console.error(error.message);
             errorElement.textContent = error.message;
         } else {
-            console.log(token.id);
+            console.log(token);
             const response = await fetch("{{ route('check-card') }}", {
                 method: 'POST',
                 headers: {
@@ -72,16 +64,13 @@
 
             try {
                     const responseData = await response.json();
-                    const { list_sources, message } = responseData;
-                    console.log(list_sources)
+                    const { msg, message } = responseData;
+                    console.log(msg)
                     errorElement.textContent = message;
                 } catch (error) {
                     console.error('Error parsing JSON response:', error);
                     errorElement.textContent = 'An error occurred while processing your request.';
                 }
-
-
-
         }
     });
 </script>

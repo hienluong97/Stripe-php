@@ -17,6 +17,8 @@ use Stripe\Payout;
 use Stripe\Topup;
 use Stripe\Transfer;
 use Stripe\Source;
+use Stripe\PaymentMethod;
+
 
 class StripeController extends Controller
 {
@@ -386,18 +388,49 @@ class StripeController extends Controller
     public function checkCard(Request $request)
     {
         Stripe::setApiKey(env('STRIPE_SECRET'));
-        $token = $request->token;
         $fingerprint_already_exists = '';
+        $is_payment_method_already_exist = false;
 
         try {
-            $source = Customer::createSource(
-                'cus_O7zzLRmeqOWo4Q',
-                ['source' => $token]
-            );
+            //create payment method
+            $payment_method = PaymentMethod::create([
+                'type' => 'card',
+                'card' => [
+                    'number' => '4242424242424242',
+                    'exp_month' => '12',
+                    'exp_year' => '2024',
+                    'cvc' => '111',
+                ],
+            ]);
+            $fingerprint_already_exists = $payment_method->card->fingerprint;
 
-            // return view('add-card')->with('source', $source);
-            // return response()->json(['source' => $source]);
-            $fingerprint_already_exists = $source->fingerprint;
+            //get all payment_method 
+            $customer_payment_methods = Customer::allPaymentMethods(
+                'cus_O5G3saLNAOkTJD'
+            );
+            $all_payment_methods = $customer_payment_methods['data'];
+
+            //check if already payment_method exists
+            foreach ($all_payment_methods as $payment_method) {
+                if ($fingerprint_already_exists === $payment_method->card->fingerprint) {
+                    $is_payment_method_already_exist = true;
+                }
+            }
+
+            $msg = '';
+
+            if ($is_payment_method_already_exist) {
+                $msg = "クレジットカードが既に存在しています。";
+            } else {
+                // Attach a PaymentMethod to a Customer
+                $response = $payment_method->attach(['customer' => 'cus_O5G3saLNAOkTJD']);
+                if ($response) {
+                    $msg = "クレジットカードを登録しました。";
+                } else {
+                    $msg = "クレジットカードを登録できませんでした!";
+                }
+            }
+            return response()->json(['msg' =>  $msg]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
@@ -406,21 +439,8 @@ class StripeController extends Controller
         }
 
 
-        $customer = Customer::allSources(
-            'cus_O7zzLRmeqOWo4Q',
-            []
-        );
-
-        $list_sources = $customer['data'];
-        $is_exit_card = false;
-        foreach ($list_sources as $source) {
-            if ($fingerprint_already_exists === $source->fingerprint) {
-                $is_exit_card = true;
-            }
-        }
 
 
-        return response()->json(['list_sources' => $list_sources]);
 
 
 
