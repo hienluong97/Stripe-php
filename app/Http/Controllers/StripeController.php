@@ -16,6 +16,11 @@ use Stripe\Payout;
 use Stripe\Topup;
 use Stripe\Transfer;
 use Stripe\Source;
+use Stripe\Product;
+use Stripe\Price;
+use Stripe\Invoice;
+use Stripe\InvoiceItem;
+use Stripe\InvoiceSend;
 
 class StripeController extends Controller
 {
@@ -376,4 +381,69 @@ class StripeController extends Controller
             'topup' => $topup,
         ]);
     }
+
+    
+    public function invoicing()
+    {
+        return view('invoicing');
+    }
+
+    public function createInvoice(Request $request)
+    {
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+
+        try {
+        //create product 
+        $product = Product::create([
+            'name' => "task-test",
+        ]);
+
+        //create price
+           $price = Price::create([
+            'product' => $product->id ,
+            'unit_amount' => 2222,
+            'currency' => 'jpy',
+        ]);
+
+        //create invoice
+
+        $invoice = Invoice::create([
+            'customer' => 'cus_O5G3saLNAOkTJD',
+            'collection_method' => 'send_invoice',
+            'days_until_due' => 30,
+        ]);
+
+        // 次に、顧客 id、商品 price、請求書 ID invoice を指定してインボイスアイテムを作成します。
+
+        $invoice_item = InvoiceItem::create([
+            'customer' => 'cus_O5G3saLNAOkTJD',
+            'price' => $price->id,
+            'invoice' => $invoice->id
+        ]);
+
+     
+        // Return the invoicing  information to display to the user
+        return view('invoicing')->with('invoice_item', $invoice_item);
+    } catch (\Exception $e) {
+        return view('invoicing')->with('error', 'Failed to create invoicing. Error: ' . $e->getMessage());
+    }
+    }
+
+    public function sendInvoice(Request $request) {
+
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+        $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET'));
+        $invoice_id = $request->input('invoice_id');
+
+        try {
+        $send_invoice = $stripe->invoices->sendInvoice($invoice_id , []);
+
+        return view('invoicing')->with('send_invoice', $send_invoice);
+    } catch (\Exception $e) {
+        return view('invoicing')->with('error', 'Failed to create invoicing. Error: ' . $e->getMessage());
+    }
+
+    }
+    
+
 }

@@ -32,3 +32,11 @@ Route::post('/payout', [StripeController::class, 'createPayout'])->name('createP
 Route::get('/payout-result', [StripeController::class, 'createBankResult'])->name('payout-result');
 Route::get('/list-payout', [StripeController::class, 'getListPayout'])->name('list-payout');
 Route::post('/bank-transfer', [StripeController::class, 'bankTransfer'])->name('bank-transfer');
+
+
+// invoicing 
+
+Route::get('/invoicing', [StripeController::class, 'invoicing'])->name('invoicing');
+Route::post('/create-invoice', [StripeController::class, 'createInvoice'])->name('create-invoice');
+
+Route::post('/send-invoice', [StripeController::class, 'sendInvoice'])->name('send-invoice');
